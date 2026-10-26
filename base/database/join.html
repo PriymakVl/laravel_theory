@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="uk">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Laravel — JOIN та SELECT</title>
+  
+  <!-- Prism.js CSS (Тема Tomorrow Night) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --card: #fff;
+      --ink: #172033;
+      --muted: #667085;
+      --accent: #00599c;
+      --accent2: #008080;
+      --line: #e6e8ef;
+      --code: #151823;
+      --warn: #fff7df;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, Segoe UI, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.55;
+    }
+
+    header {
+      background: linear-gradient(135deg, #00599c, #283593);
+      color: #fff;
+      padding: 24px 20px;
+    }
+
+    .wrap {
+      max-width: 1100px;
+      margin: auto;
+    }
+
+    .hero h1 {
+      font-size: 36px;
+      margin: 0 0 8px;
+    }
+
+    .lead {
+      font-size: 18px;
+      opacity: 0.95;
+      margin: 0;
+    }
+
+    main {
+      padding: 28px 16px 60px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 24px;
+      margin: 18px 0;
+      box-shadow: 0 7px 24px #1720330b;
+    }
+
+    h2 {
+      margin-top: 0;
+      font-size: 24px;
+      color: var(--accent);
+    }
+
+    .teacher {
+      background: var(--warn);
+      border-left: 5px solid #f4b400;
+      padding: 14px 16px;
+      border-radius: 10px;
+      margin-top: 14px;
+    }
+
+    .note {
+      background: #eaf2f8;
+      border-left: 5px solid var(--accent);
+      padding: 14px 16px;
+      border-radius: 10px;
+      margin-top: 14px;
+    }
+
+    /* Стилі для блоків коду та Prism.js */
+    pre,
+    pre[class*="language-"] {
+      background: var(--code) !important;
+      color: #f8f8f2;
+      padding: 17px;
+      border-radius: 13px;
+      overflow: auto;
+      font-size: 15px;
+      line-height: 1.5;
+      margin: 16px 0;
+    }
+
+    code,
+    code[class*="language-"] {
+      font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+      text-shadow: none !important;
+    }
+
+    :not(pre) > code {
+      background: #eef0f5;
+      color: #d63384;
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-family: Consolas, Monaco, monospace;
+    }
+
+    @media (max-width: 760px) {
+      .card {
+        padding: 18px;
+      }
+      .hero h1 {
+        font-size: 28px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="wrap hero">
+      <h1>Laravel: join() та select()</h1>
+      <p class="lead">Основна вибірка даних з пов'язаних таблиць <code>users</code> та <code>user_options</code> (за полем <code>user_id</code>).</p>
+    </div>
+  </header>
+  
+  <main class="wrap">
+
+    <!-- 1. INNER JOIN -->
+    <section class="card" id="join-select">
+      <h2>1. Базовий JOIN та SELECT</h2>
+      <p>Метод <code>join()</code> об'єднує таблиці, а <code>select()</code> вказує конкретні поля для вибірки.</p>
+
+      <pre><code class="language-php">$user = DB::table('users')
+    ->join('user_options', 'users.id', '=', 'user_options.user_id')
+    ->select(
+        'users.id',
+        'users.name',
+        'users.email',
+        'user_options.phone',
+        'user_options.address'
+    )
+    ->where('users.id', $id)
+    ->first();</code></pre>
+
+      <p><strong>Результат:</strong> один об'єкт із вибраними полями:</p>
+      <pre><code class="language-php">$user->name;
+$user->email;
+$user->phone;
+$user->address;</code></pre>
+    </section>
+
+    <!-- 2. Auth user -->
+    <section class="card" id="auth-user">
+      <h2>2. Отримання даних авторизованого користувача</h2>
+      <p>Замість конкретного <code>$id</code> можна передавати ідентифікатор поточного користувача через <code>auth()->id()</code>:</p>
+
+      <pre><code class="language-php">$user = DB::table('users')
+    ->join('user_options', 'users.id', '=', 'user_options.user_id')
+    ->select('users.*', 'user_options.phone', 'user_options.address')
+    ->where('users.id', auth()->id())
+    ->first();</code></pre>
+    </section>
+
+    <!-- 3. LEFT JOIN -->
+    <section class="card" id="left-join">
+      <h2>3. Якщо додатковий запис може бути відсутній (LEFT JOIN)</h2>
+      <p>Використовуйте <code>leftJoin()</code>, щоб отримати користувача навіть у тому випадку, якщо запису в <code>user_options</code> немає:</p>
+
+      <pre><code class="language-php">$user = DB::table('users')
+    ->leftJoin('user_options', 'users.id', '=', 'user_options.user_id')
+    ->select('users.*', 'user_options.phone', 'user_options.address')
+    ->where('users.id', auth()->id())
+    ->first();</code></pre>
+
+      <div class="teacher">
+        <b>Важливо:</b> Якщо в обох таблицях є однакові назви колонок (наприклад, <code>id</code>), обов'язково явно вказуйте назву таблиці (<code>users.id</code>), щоб уникнути конфліктів і перезапису даних.
+      </div>
+    </section>
+
+    <!-- 4. Eloquent alternative -->
+    <section class="card" id="eloquent">
+      <h2>4. Альтернатива через Eloquent (без JOIN)</h2>
+      <p>Якщо у моделі <code>User</code> налаштовано зв'язок <code>hasOne()</code> з <code>user_options</code>, вибірку можна спростити:</p>
+
+      <pre><code class="language-php">$user = User::with('options')->find(auth()->id());
+
+// Доступ до даних:
+$user->options->phone;</code></pre>
+
+      <div class="note">
+        <b>Порада:</b> Варіант з Eloquent зручніший, якщо додаткові дані користувача часто використовуються окремо.
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Prism.js Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup-templating.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-php.min.js"></script>
+</body>
+
+</html>
